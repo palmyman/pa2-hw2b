@@ -10,30 +10,30 @@ Druhou změnou je historie vlastníků. Každý automobil si udržuje v databáz
 
 Veřejné rozhraní je uvedeno níže. Pro třídu CRegister obsahuje následující:
 
-    Konstruktor bez parametrů. Tento konstruktor inicializuje instanci třídy tak, že vzniklá instance je zatím prázdná (neobsahuje žádné záznamy).
-    Destruktor. Uvolňuje prostředky, které instance alokovala.
-    Metoda AddCar(RZ, VIN, Name, Surname) přidá do existující databáze další záznam. Parametry Name a Surname reprezentují jméno a příjmení občana, RZ a VIN je identifikace automobilu. Metoda vrací hodnotu true, pokud byl záznam přidán, nebo hodnotu false, pokud dojde k chybě a automobil přidán nebyl. Chybou je, pokud již v databázi existuje automobil se stejnou RZ nebo stejným VIN.
-    Metody DelCar (RZ) / DelCar (VIN) odstraní záznam z databáze. Parametrem je jednoznačná identifikace automobilu pomocí RZ nebo VIN. Pokud byl záznam skutečně odstraněn, vrátí metoda hodnotu true. Pokud záznam neodstraní (protože neexistoval automobil s touto identifikací), vrátí metoda hodnotu false.
-    Metoda Transfer ( RZ, name, surname ) / Transfer (VIN, name, surname) provede převod zadaného automobilu (RZ / VIN) ze stávajícího majitele na nového majitele zadaného parametry name a surname. Pokud metoda uspěje, vrací true, pro neúspěch vrací false (neexistující automobil, chybou je i pokus o převod, kdy stávající a nový majitel je ten samý občan).
-    Metoda ListCars (name, surname) vyhledá automobily, které jsou vlastněné zadaným občanem. Metoda vrátí objekt typu CCarList, pomocí kterého lze postupně projít nalezené záznamy (iterátor). Pokud občan zadaného jména a příjmení neexistuje, je vrácen iterátor s prázdným obsahem (0 automobilů).
-    Metoda CountCars ( name, surname ) zjistí počet automobilů, který vlastní občan se zadaným jménem a adresou. Pokud občan zadaného jména v databázi neexistuje, je vrácena 0.
-    Metoda ListOwners (RZ) / ListOwners (VIN) vyhledá osoby, které vlastnily (vlastní) zadaný automobil. Metoda vrátí objekt typu COwnerList, pomocí kterého lze postupně projít nalezené záznamy (iterátor). Pokud zadaný automobil neexistuje, je vrácen iterátor s prázdným obsahem (0 osob).
-    Metoda CountOwners (RZ) / CountOwners (VIN) zjistí počet majitelů v historii vlastnictví zadaného automobilu. Pokud zadaný automobil v databázi neexistuje, je vrácena 0.
-    Do třídy si budete muset přidat členské proměnné. Dále si do rozhraní můžete přidat další pomocné metody (ideálně neveřejné).
++ Konstruktor bez parametrů. Tento konstruktor inicializuje instanci třídy tak, že vzniklá instance je zatím prázdná (neobsahuje žádné záznamy).
++ Destruktor. Uvolňuje prostředky, které instance alokovala.
++ Metoda AddCar(RZ, VIN, Name, Surname) přidá do existující databáze další záznam. Parametry Name a Surname reprezentují jméno a příjmení občana, RZ a VIN je identifikace automobilu. Metoda vrací hodnotu true, pokud byl záznam přidán, nebo hodnotu false, pokud dojde k chybě a automobil přidán nebyl. Chybou je, pokud již v databázi existuje automobil se stejnou RZ nebo stejným VIN.
++ Metody DelCar (RZ) / DelCar (VIN) odstraní záznam z databáze. Parametrem je jednoznačná identifikace automobilu pomocí RZ nebo VIN. Pokud byl záznam skutečně odstraněn, vrátí metoda hodnotu true. Pokud záznam neodstraní (protože neexistoval automobil s touto identifikací), vrátí metoda hodnotu false.
++ Metoda Transfer ( RZ, name, surname ) / Transfer (VIN, name, surname) provede převod zadaného automobilu (RZ / VIN) ze stávajícího majitele na nového majitele zadaného parametry name a surname. Pokud metoda uspěje, vrací true, pro neúspěch vrací false (neexistující automobil, chybou je i pokus o převod, kdy stávající a nový majitel je ten samý občan).
++ Metoda ListCars (name, surname) vyhledá automobily, které jsou vlastněné zadaným občanem. Metoda vrátí objekt typu CCarList, pomocí kterého lze postupně projít nalezené záznamy (iterátor). Pokud občan zadaného jména a příjmení neexistuje, je vrácen iterátor s prázdným obsahem (0 automobilů).
++ Metoda CountCars ( name, surname ) zjistí počet automobilů, který vlastní občan se zadaným jménem a adresou. Pokud občan zadaného jména v databázi neexistuje, je vrácena 0.
++ Metoda ListOwners (RZ) / ListOwners (VIN) vyhledá osoby, které vlastnily (vlastní) zadaný automobil. Metoda vrátí objekt typu COwnerList, pomocí kterého lze postupně projít nalezené záznamy (iterátor). Pokud zadaný automobil neexistuje, je vrácen iterátor s prázdným obsahem (0 osob).
++ Metoda CountOwners (RZ) / CountOwners (VIN) zjistí počet majitelů v historii vlastnictví zadaného automobilu. Pokud zadaný automobil v databázi neexistuje, je vrácena 0.
++ Do třídy si budete muset přidat členské proměnné. Dále si do rozhraní můžete přidat další pomocné metody (ideálně neveřejné).
 
 Třída CCarList slouží k jednorázovému procházení seznamem automobilů, které jsou vlastněné jedním občanem. V seznamu je vždy jeden automobil vybraný a v seznamu se můžeme pohybovat vpřed. Pořadí při procházení není zadané (může být libovolné). Rozhraní třídy CCarList:
 
-    Metoda RZ zjistí RZ vybraného automobilu,
-    Metoda VIN zjistí VIN vybraného automobilu,
-    metoda AtEnd zjistí, zda jsme již dosáhli konce seznamu (vrátí true) nebo zda jsou ještě nějaké záznamy k dispozici (false).
-    Metoda Next posouvá v seznamu o jednu pozici směrem ke konci.
++ Metoda RZ zjistí RZ vybraného automobilu,
++ Metoda VIN zjistí VIN vybraného automobilu,
++ metoda AtEnd zjistí, zda jsme již dosáhli konce seznamu (vrátí true) nebo zda jsou ještě nějaké záznamy k dispozici (false).
++ Metoda Next posouvá v seznamu o jednu pozici směrem ke konci.
 
 Třída COwnerList slouží k jednorázovému procházení seznamem vlastníků, kteří vlastnili/vlastní zadaný automobil. V seznamu je vždy jeden vlastník aktuální a v seznamu se můžeme pohybovat vpřed. První v pořadí musí být aktuální vlastník, přio procházení se pak pohybujeme směrem zpět do historie. Rozhraní třídy COwnerList:
 
-    Metoda Name zjistí jméno vybraného vlastníka,
-    Metoda Surname zjistí příjmení vybraného vlastníka,
-    metoda AtEnd zjistí, zda jsme již dosáhli konce seznamu (vrátí true) nebo zda jsou ještě nějaké záznamy k dispozici (false).
-    Metoda Next posouvá v seznamu o jednu pozici směrem ke konci (zpět v historii).
++ Metoda Name zjistí jméno vybraného vlastníka,
++ Metoda Surname zjistí příjmení vybraného vlastníka,
++ metoda AtEnd zjistí, zda jsme již dosáhli konce seznamu (vrátí true) nebo zda jsou ještě nějaké záznamy k dispozici (false).
++ Metoda Next posouvá v seznamu o jednu pozici směrem ke konci (zpět v historii).
 
 Odevzdávejte soubor, který obsahuje implementované třídy CRegister a CCarList a CPersonList. Třídy musí splňovat veřejné rozhraní podle ukázky - pokud Vámi odevzdané řešení nebude obsahovat popsané rozhraní, dojde k chybě při kompilaci. Do třídy si ale můžete doplnit další metody (veřejné nebo i privátní) a členské proměnné. Odevzdávaný soubor musí obsahovat jak deklaraci třídy (popis rozhraní) tak i definice metod, konstruktoru a destruktoru. Je jedno, zda jsou metody implementované inline nebo odděleně. Odevzdávaný soubor nesmí obsahovat vkládání hlavičkových souborů a funkci main (funkce main a vkládání hlavičkových souborů může zůstat, ale pouze obalené direktivami podmíněného překladu jako v ukázce níže).
 
