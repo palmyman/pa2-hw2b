@@ -1,4 +1,4 @@
-# pa2hw2b
+# pa2-hw2b
 Registr automobilů II
 Úkolem je realizovat třídu CRegister, která bude implementovat databázi automobilů. Jedná se o rozšíření jednodušší varianty z druhého příkladu. Doporučujeme nejprve realizovat jednodušší příklad a ten pak rozšířit pro tuto v ariantu.
 
