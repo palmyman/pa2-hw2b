@@ -34,6 +34,14 @@ CPerson::CPerson(string name, string surname) {
     this->surname = surname;
 }
 
+string CPerson::GetName() {
+    return name;
+}
+
+string CPerson::GetSurname() {
+    return surname;
+}
+
 class CRecord {
 public:
     CRecord(string, string, string, unsigned);
