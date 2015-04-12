@@ -29,6 +29,11 @@ private:
     string name, surname;
 };
 
+CPerson::CPerson(string name, string surname) {
+    this->name = name;
+    this->surname = surname;
+}
+
 class CRecord {
 public:
     CRecord(string, string, string, unsigned);
@@ -40,12 +45,15 @@ public:
     int CompareByRz(const CRecord&) const;
     int CompareByVin(const CRecord&) const;
     string GetName(void) const;
-    string GetSurName(void) const;
+    string GetSurname(void) const;
     string GetRz(void) const;
     unsigned GetVin(void) const;
     unsigned GetByNameIndex() const;
     unsigned GetByRzIndex() const;
     unsigned GetByVinIndex() const;
+    vector<CPerson> GetOwnerHistory(void) const;
+    void SetName(string);
+    void SetSurname(string);
     void SetByNameIndex(unsigned byNameIndex);
     void SetByRzIndex(unsigned byVinIndex);
     void SetByVinIndex(unsigned byRzIndex);
@@ -54,7 +62,7 @@ public:
 #endif /* __PROGTEST__ */
 private:
     string name, surname, rz;
-    unsigned vin, byNameIndex, byRzIndex, byVinIndex, ownersCount;
+    unsigned vin, byNameIndex, byRzIndex, byVinIndex;
     vector<CPerson> ownerHistory;
 };
 
@@ -66,7 +74,7 @@ CRecord::CRecord(string name, string surname, string rz, unsigned vin) {
     this->byNameIndex = 0;
     this->byRzIndex = 0;
     this->byVinIndex = 0;
-    this->ownersCount = 1;
+    this->ownerHistory.push_back(CPerson(name, surname));
 }
 
 CRecord::CRecord(string name, string surname) {
@@ -77,7 +85,6 @@ CRecord::CRecord(string name, string surname) {
     this->byNameIndex = 0;
     this->byRzIndex = 0;
     this->byVinIndex = 0;
-    this->ownersCount = 0;
 }
 
 CRecord::CRecord(string rz) {
@@ -88,7 +95,6 @@ CRecord::CRecord(string rz) {
     this->byNameIndex = 0;
     this->byRzIndex = 0;
     this->byVinIndex = 0;
-    this->ownersCount = 0;
 }
 
 CRecord::CRecord(unsigned vin) {
@@ -99,7 +105,6 @@ CRecord::CRecord(unsigned vin) {
     this->byNameIndex = 0;
     this->byRzIndex = 0;
     this->byVinIndex = 0;
-    this->ownersCount = 0;
 }
 
 bool CRecord::operator<(const CRecord& x) const {
@@ -132,7 +137,7 @@ string CRecord::GetName() const {
     return this->name;
 }
 
-string CRecord::GetSurName() const {
+string CRecord::GetSurname() const {
     return this->surname;
 }
 
@@ -156,6 +161,10 @@ unsigned CRecord::GetByVinIndex(void) const {
     return this->byVinIndex;
 }
 
+vector<CPerson> CRecord::GetOwnerHistory(void) const {
+    return this->ownerHistory;
+}
+
 void CRecord::SetByNameIndex(unsigned byNameIndex) {
     this->byNameIndex = byNameIndex;
 }
@@ -166,6 +175,14 @@ void CRecord::SetByRzIndex(unsigned byRzIndex) {
 
 void CRecord::SetByVinIndex(unsigned byVinIndex) {
     this->byVinIndex = byVinIndex;
+}
+
+void CRecord::SetName(string name) {
+    this->name = name;
+}
+
+void CRecord::SetSurname(string surname) {
+    this->surname = surname;
 }
 
 class CCarList {
@@ -305,13 +322,13 @@ bool CRegister::FindFirstByName(const CRecord& tmpRecord, unsigned& firstIndex, 
     if (!FindByName(tmpRecord, anyIndex)) return 0;
     firstIndex = anyIndex;
     while (firstIndex > 0) {
-        if (byName[firstIndex]->GetSurName() != byName[firstIndex - 1]->GetSurName() ||
+        if (byName[firstIndex]->GetSurname() != byName[firstIndex - 1]->GetSurname() ||
                 byName[firstIndex]->GetName() != byName[firstIndex - 1]->GetName()) break;
         firstIndex--;
     }
     lastIndex = anyIndex;
     while (lastIndex < records - 1) {
-        if (byName[lastIndex]->GetSurName() != byName[lastIndex + 1]->GetSurName() ||
+        if (byName[lastIndex]->GetSurname() != byName[lastIndex + 1]->GetSurname() ||
                 byName[lastIndex]->GetName() != byName[lastIndex + 1]->GetName()) break;
         lastIndex++;
     }
@@ -457,7 +474,7 @@ bool CRegister::DelCar(const string& rz) {
     return 1;
 }
 
-bool CRegister::DelCar(unsigned int& vin) {
+bool CRegister::DelCar(unsigned int vin) {
     unsigned delByNameIndex, delByRzIndex, delByVinIndex;
     CRecord delRecord(vin);
     if (!(FindByVin(delRecord, delByVinIndex))) {
@@ -500,11 +517,28 @@ bool CRegister::Transfer(const string & rz,
         cout << "Unable to delete, RECORD DOESN'T EXIST" << endl;
         return 0;
     }
-    CRecord * toDeleteRecord = byRz[delByRzIndex];
-    unsigned vin = toDeleteRecord->GetVin();
-    if (toDeleteRecord->GetName() == nName && toDeleteRecord->GetSurName() == nSurname)
+    CRecord * toUpdateRecord = byRz[delByRzIndex];    
+    
+    if (toUpdateRecord->GetName() == nName && toUpdateRecord->GetSurname() == nSurname)
         return 0;
-    return DelCar(rz) && AddCar(rz, vin, nName, nSurname);
+    
+    toUpdateRecord->GetOwnerHistory().push_back(CPerson(nName, nSurname));
+    toUpdateRecord->SetName(nName);
+    toUpdateRecord->SetSurname(nSurname);
+    
+    for (unsigned i = toUpdateRecord->GetByNameIndex(); i < records - 1; i++) {
+        byName[i] = byName[i + 1];
+        byName[i]->SetByNameIndex(i);
+    }
+    
+    unsigned newByNameIndex;
+    FindByName(toUpdateRecord, newByNameIndex);
+    for (unsigned i = records; i > newByNameIndex; i--) {
+        byName[i] = byName[i - 1];
+        byName[i]->SetByNameIndex(i);
+    }
+    
+    return 1;
 }
 
 int CRegister::CountCars(const string& name, const string& surname) const {
