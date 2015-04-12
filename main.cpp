@@ -20,33 +20,53 @@
 using namespace std;
 #endif /* __PROGTEST__ */
 
+class CPerson {
+public:
+    CPerson(string, string);
+    string GetName(void);
+    string GetSurname(void);
+private:
+    string name, surname;
+};
+
 class CRecord {
 public:
-    CRecord(string, string, string);
+    CRecord(string, string, string, unsigned);
     CRecord(string, string);
     CRecord(string);
+    CRecord(unsigned);
     bool operator<(const CRecord&) const;
     bool operator>(const CRecord&) const;
     int CompareByRz(const CRecord&) const;
+    int CompareByVin(const CRecord&) const;
     string GetName(void) const;
     string GetSurName(void) const;
     string GetRz(void) const;
+    unsigned GetVin(void) const;
     unsigned GetByNameIndex() const;
+    unsigned GetByRzIndex() const;
+    unsigned GetByVinIndex() const;
     void SetByNameIndex(unsigned byNameIndex);
+    void SetByRzIndex(unsigned byVinIndex);
+    void SetByVinIndex(unsigned byRzIndex);
 #ifndef __PROGTEST__
     friend ostream& operator<<(ostream&, const CRecord&);
 #endif /* __PROGTEST__ */
 private:
     string name, surname, rz;
-    unsigned vin, byNameIndex;
+    unsigned vin, byNameIndex, byRzIndex, byVinIndex, ownersCount;
+    vector<CPerson> ownerHistory;
 };
 
-CRecord::CRecord(string name, string surname, string rz) {
+CRecord::CRecord(string name, string surname, string rz, unsigned vin) {
     this->name = name;
     this->surname = surname;
     this->rz = rz;
-    this->vin = 0;
+    this->vin = vin;
     this->byNameIndex = 0;
+    this->byRzIndex = 0;
+    this->byVinIndex = 0;
+    this->ownersCount = 1;
 }
 
 CRecord::CRecord(string name, string surname) {
@@ -55,6 +75,9 @@ CRecord::CRecord(string name, string surname) {
     this->rz = "";
     this->vin = 0;
     this->byNameIndex = 0;
+    this->byRzIndex = 0;
+    this->byVinIndex = 0;
+    this->ownersCount = 0;
 }
 
 CRecord::CRecord(string rz) {
@@ -63,6 +86,20 @@ CRecord::CRecord(string rz) {
     this->rz = rz;
     this->vin = 0;
     this->byNameIndex = 0;
+    this->byRzIndex = 0;
+    this->byVinIndex = 0;
+    this->ownersCount = 0;
+}
+
+CRecord::CRecord(unsigned vin) {
+    this->name = "";
+    this->surname = "";
+    this->rz = "";
+    this->vin = vin;
+    this->byNameIndex = 0;
+    this->byRzIndex = 0;
+    this->byVinIndex = 0;
+    this->ownersCount = 0;
 }
 
 bool CRecord::operator<(const CRecord& x) const {
@@ -85,6 +122,12 @@ int CRecord::CompareByRz(const CRecord& x) const {
     return 0;
 }
 
+int CRecord::CompareByVin(const CRecord& x) const {
+    if (this->vin < x.vin) return -1;
+    if (this->vin > x.vin) return 1;
+    return 0;
+}
+
 string CRecord::GetName() const {
     return this->name;
 }
@@ -97,12 +140,32 @@ string CRecord::GetRz() const {
     return this->rz;
 }
 
+unsigned CRecord::GetVin() const {
+    return this->vin;
+}
+
 unsigned CRecord::GetByNameIndex(void) const {
     return this->byNameIndex;
 }
 
+unsigned CRecord::GetByRzIndex(void) const {
+    return this->byRzIndex;
+}
+
+unsigned CRecord::GetByVinIndex(void) const {
+    return this->byVinIndex;
+}
+
 void CRecord::SetByNameIndex(unsigned byNameIndex) {
     this->byNameIndex = byNameIndex;
+}
+
+void CRecord::SetByRzIndex(unsigned byRzIndex) {
+    this->byRzIndex = byRzIndex;
+}
+
+void CRecord::SetByVinIndex(unsigned byVinIndex) {
+    this->byVinIndex = byVinIndex;
 }
 
 class CCarList {
@@ -110,6 +173,7 @@ public:
     CCarList(CRecord ** byName, unsigned firstIndex, unsigned lastIndex);
     CCarList(void);
     string RZ(void) const;
+    unsigned VIN(void) const;
     bool AtEnd(void) const;
     void Next(void);
 private:
@@ -133,8 +197,12 @@ string CCarList::RZ() const {
     return byName[firstIndex]->GetRz();
 }
 
+unsigned CCarList::VIN() const {
+    return byName[firstIndex]->GetVin();
+}
+
 bool CCarList::AtEnd() const {
-    if(empty) return true;
+    if (empty) return true;
     return (firstIndex == lastIndex + 1);
 }
 
@@ -142,23 +210,44 @@ void CCarList::Next() {
     firstIndex++;
 }
 
+class COwnerList {
+public:
+    string Name(void) const;
+    string Surname(void) const;
+    bool AtEnd(void) const;
+    void Next(void);
+private:
+    // todo
+};
+
 class CRegister {
 public:
     CRegister(void);
     ~CRegister(void);
     bool AddCar(const string & rz,
+            unsigned int vin,
             const string & name,
             const string & surname);
     bool DelCar(const string & rz);
+    bool DelCar(unsigned int vin);
     bool Transfer(const string & rz,
+            const string & nName,
+            const string & nSurname);
+    bool Transfer(unsigned int vin,
             const string & nName,
             const string & nSurname);
     CCarList ListCars(const string & name,
             const string & surname) const;
     int CountCars(const string & name,
             const string & surname) const;
+    COwnerList ListOwners(const string & RZ) const;
+    int CountOwners(const string & RZ) const;
+    COwnerList ListOwners(unsigned int vin) const;
+    int CountOwners(unsigned int vin) const;
+
     bool FindByName(const CRecord &, unsigned &) const;
     bool FindByRz(const CRecord &, unsigned &) const;
+    bool FindByVin(const CRecord &, unsigned &) const;
     bool FindFirstByName(const CRecord &, unsigned &, unsigned &) const;
     void Realloc(void);
 #ifndef __PROGTEST__
@@ -167,7 +256,7 @@ public:
 protected:
     static const unsigned defaultSize = 10;
     unsigned size;
-    CRecord ** byName, ** byRz;
+    CRecord ** byName, ** byRz, ** byVin;
     unsigned records;
 };
 
@@ -176,6 +265,7 @@ CRegister::CRegister() {
     records = 0;
     byName = new CRecord* [size];
     byRz = new CRecord* [size];
+    byVin = new CRecord* [size];
 }
 
 CRegister::~CRegister() {
@@ -185,8 +275,10 @@ CRegister::~CRegister() {
     }
     delete[] byName;
     delete[] byRz;
+    delete[] byVin;
     byName = NULL;
     byRz = NULL;
+    byVin = NULL;
     records = 0;
 }
 
@@ -244,63 +336,92 @@ bool CRegister::FindByRz(const CRecord & pattern, unsigned & targetIndex) const 
     return 0;
 }
 
+bool CRegister::FindByVin(const CRecord & pattern, unsigned & targetIndex) const {
+    int from = 0, to = records - 1, middle = 0;
+    targetIndex = 0;
+    while (from <= to && records) {
+        middle = (from + to) / 2;
+        if (pattern.CompareByVin(*(byRz[middle])) < 0)
+            to = middle - 1;
+        else if (pattern.CompareByVin(*(byRz[middle])) > 0)
+            from = middle + 1;
+        else {
+            targetIndex = middle;
+            return 1;
+        }
+    }
+    targetIndex = from;
+    return 0;
+}
+
 void CRegister::Realloc(void) {
     if (records > size * 0.9) {
         size *= 2;
-        CRecord ** tmpByName = byName, ** tmpByAcc = byRz;
+        CRecord ** tmpByName = byName, ** tmpByAcc = byRz, ** tmpByVin;
         byName = new CRecord * [size];
         byRz = new CRecord * [size];
+        byVin = new CRecord * [size];
         for (unsigned i = 0; i < records; i++) {
             byName[i] = tmpByName[i];
             byRz[i] = tmpByAcc[i];
+            byVin[i] = tmpByVin[i];
         }
         delete[] tmpByName;
         delete[] tmpByAcc;
+        delete[] tmpByVin;
     } else if (size > defaultSize && records < size * 0.4) {
         size /= 2;
-        CRecord ** tmpByName = byName, ** tmpByAcc = byRz;
+        CRecord ** tmpByName = byName, ** tmpByAcc = byRz, ** tmpByVin;
         byName = new CRecord * [size];
         byRz = new CRecord * [size];
+        byVin = new CRecord * [size];
         for (unsigned i = 0; i < records; i++) {
             byName[i] = tmpByName[i];
             byRz[i] = tmpByAcc[i];
+            byVin[i] = tmpByVin[i];
         }
         delete[] tmpByName;
         delete[] tmpByAcc;
+        delete[] tmpByVin;
     }
 }
 
-bool CRegister::AddCar(const string& rz, const string& name, const string& surname) {
+bool CRegister::AddCar(const string& rz, unsigned int vin, const string& name, const string& surname) {
     Realloc();
-    CRecord tmpRecord(name, surname, rz);
-    unsigned newByNameIndex, newByRzIndex;
+    CRecord tmpRecord(name, surname, rz, vin);
+    unsigned newByNameIndex, newByRzIndex, newByVinIndex;
     FindByName(tmpRecord, newByNameIndex);
-    if (FindByRz(tmpRecord, newByRzIndex)) {
+    if (FindByRz(tmpRecord, newByRzIndex) || FindByVin(tmpRecord, newByVinIndex)) {
         cout << "Unable to add, RECORD ALREADY EXISTS (#" << newByRzIndex << ")" << endl;
         return 0;
     }
-    if (name == "" || surname == "") {
+    if (name == "" || surname == "" || rz == "") {
         cout << "Unable to add, system doesn't support empty records.";
         return 0;
     }
     //shift indexes
-    for (unsigned i = records; i > newByNameIndex; i--) {        
+    for (unsigned i = records; i > newByNameIndex; i--) {
         byName[i] = byName[i - 1];
         byName[i]->SetByNameIndex(i);
     }
     for (unsigned i = records; i > newByRzIndex; i--) {
         byRz[i] = byRz[i - 1];
+        byRz[i]->SetByRzIndex(i);
+    }
+    for (unsigned i = records; i > newByVinIndex; i--) {
+        byVin[i] = byVin[i - 1];
     }
     CRecord * newRecord = new CRecord(tmpRecord);
     newRecord->SetByNameIndex(newByNameIndex);
     byName[newByNameIndex] = newRecord;
     byRz[newByRzIndex] = newRecord;
+    byVin[newByVinIndex] = newRecord;
     records++;
     return 1;
 }
 
 bool CRegister::DelCar(const string& rz) {
-    unsigned delByNameIndex, delByRzIndex;
+    unsigned delByNameIndex, delByRzIndex, delByVinIndex;
     CRecord delRecord(rz);
     if (!(FindByRz(delRecord, delByRzIndex))) {
         cout << "Unable to delete, RECORD DOESN'T EXIST" << endl;
@@ -317,6 +438,10 @@ bool CRegister::DelCar(const string& rz) {
     byName[records] = NULL;
     for (unsigned i = delByRzIndex; i < records - 1; i++) {
         byRz[i] = byRz[i + 1];
+    }
+    byVin[records] = NULL;
+    for (unsigned i = delByVinIndex; i < records - 1; i++) {
+        byVin[i] = byVin[i + 1];
     }
     byRz[records] = NULL;
 
@@ -336,9 +461,10 @@ bool CRegister::Transfer(const string & rz,
         return 0;
     }
     CRecord * toDeleteRecord = byRz[delByRzIndex];
+    unsigned vin = toDeleteRecord->GetVin();
     if (toDeleteRecord->GetName() == nName && toDeleteRecord->GetSurName() == nSurname)
         return 0;
-    return DelCar(rz) && AddCar(rz, nName, nSurname);
+    return DelCar(rz) && AddCar(rz, vin, nName, nSurname);
 }
 
 int CRegister::CountCars(const string& name, const string& surname) const {
@@ -446,89 +572,171 @@ int main(int argc, char** argv) {
     //    }
 
     CRegister b1;
-    assert(b1 . AddCar("ABC-12-34", "John", "Smith") == true);
-    assert(b1 . AddCar("ABC-32-22", "John", "Hacker") == true);
-    assert(b1 . AddCar("XYZ-11-22", "Peter", "Smith") == true);
+    assert(b1 . AddCar("ABC-12-34", 1000, "John", "Smith") == true);
+    assert(b1 . AddCar("ABC-32-22", 2000, "John", "Hacker") == true);
+    assert(b1 . AddCar("XYZ-11-22", 10, "Peter", "Smith") == true);
     assert(b1 . CountCars("John", "Hacker") == 1);
     for (CCarList l = b1 . ListCars("John", "Hacker"); !l . AtEnd(); l . Next())
-        cout << l . RZ() << endl;
-    // the following plate
+        cout << l . RZ() << ", " << l . VIN() << endl;
+    // the following license plate + VIN
 
-    // ABC-32-22
-    
-    cout << b1 << endl;
+    // ABC-32-22, 2000
+
+    assert(b1 . CountOwners("ABC-12-34") == 1);
+    for (COwnerList l = b1 . ListOwners("ABC-12-34"); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 1 owners in that order:
+
+    // Smith, John
+
+    assert(b1 . CountOwners(10) == 1);
+    for (COwnerList l = b1 . ListOwners(10); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 1 owners in that order:
+
+    // Smith, Peter
 
     assert(b1 . Transfer("XYZ-11-22", "John", "Hacker") == true);
-    assert(b1 . AddCar("XYZ-99-88", "John", "Smith") == true);
+    assert(b1 . Transfer(10, "Will", "Smith") == true);
+    assert(b1 . Transfer("XYZ-11-22", "John", "Hacker") == true);
+    assert(b1 . AddCar("XYZ-99-88", 20, "John", "Smith") == true);
     assert(b1 . CountCars("John", "Smith") == 2);
     for (CCarList l = b1 . ListCars("John", "Smith"); !l . AtEnd(); l . Next())
-        cout << l . RZ() << endl;
-    // the following 2 licence plates, in any order:
+        cout << l . RZ() << ", " << l . VIN() << endl;
+    // the following 2 license plates + VINs, in any order:
 
-    // ABC-12-34
-    // XYZ-99-88
-    
-    cout << b1 << endl;
+    // ABC-12-34, 1000
+    // XYZ-99-88, 20
 
     assert(b1 . CountCars("John", "Hacker") == 2);
     for (CCarList l = b1 . ListCars("John", "Hacker"); !l . AtEnd(); l . Next())
-        cout << l . RZ() << endl;
-    // the following 2 licence plates, in any order:
+        cout << l . RZ() << ", " << l . VIN() << endl;
+    // the following 2 license plates + VINs, in any order:
 
-    // ABC-32-22
-    // XYZ-11-22
-    
-    cout << b1 << endl;
+    // ABC-32-22, 2000
+    // XYZ-11-22, 10
 
     assert(b1 . CountCars("Peter", "Smith") == 0);
     for (CCarList l = b1 . ListCars("Peter", "Smith"); !l . AtEnd(); l . Next())
-        cout << l . RZ() << endl;
+        cout << l . RZ() << ", " << l . VIN() << endl;
     // empty output
-    
-    cout << b1 << endl;
+
+    assert(b1 . CountOwners(10) == 4);
+    for (COwnerList l = b1 . ListOwners(10); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 4 owners in that order:
+
+    // Hacker, John
+    // Smith, Will
+    // Hacker, John
+    // Smith, Peter
+
+    assert(b1 . CountOwners("XYZ-11-22") == 4);
+    for (COwnerList l = b1 . ListOwners("XYZ-11-22"); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 4 owners in that order:
+
+    // Hacker, John
+    // Smith, Will
+    // Hacker, John
+    // Smith, Peter
 
     assert(b1 . Transfer("XYZ-11-22", "Jane", "Black") == true);
     assert(b1 . CountCars("Jane", "Black") == 1);
     for (CCarList l = b1 . ListCars("Jane", "Black"); !l . AtEnd(); l . Next())
-        cout << l . RZ() << endl;
-    // the following plate
+        cout << l . RZ() << ", " << l . VIN() << endl;
+    // the following license plate + VIN
 
-    // XYZ-11-22
-    
-    cout << b1 << endl;
+    // XYZ-11-22, 10
 
     assert(b1 . CountCars("John", "Smith") == 2);
     for (CCarList l = b1 . ListCars("John", "Smith"); !l . AtEnd(); l . Next())
-        cout << l . RZ() << endl;
-    // the following 2 licence plates, in any order:
+        cout << l . RZ() << ", " << l . VIN() << endl;
+    // the following 2 license plates + VINs, in any order:
 
-    // ABC-12-34
-    // XYZ-99-88
-    
-    cout << b1 << endl;
+    // ABC-12-34, 1000
+    // XYZ-99-88, 20
+
+    assert(b1 . CountOwners(10) == 5);
+    for (COwnerList l = b1 . ListOwners(10); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 5 owners in that order:
+
+    // Black, Jane
+    // Hacker, John
+    // Smith, Will
+    // Hacker, John
+    // Smith, Peter
+
+    assert(b1 . CountOwners("XYZ-11-22") == 5);
+    for (COwnerList l = b1 . ListOwners("XYZ-11-22"); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 5 owners in that order:
+
+    // Black, Jane
+    // Hacker, John
+    // Smith, Will
+    // Hacker, John
+    // Smith, Peter
 
     assert(b1 . DelCar("XYZ-11-22") == true);
+    assert(b1 . DelCar(1000) == true);
     assert(b1 . CountCars("Jane", "Black") == 0);
     for (CCarList l = b1 . ListCars("Jane", "Black"); !l . AtEnd(); l . Next())
-        cout << l . RZ() << endl;
+        cout << l . RZ() << ", " << l . VIN() << endl;
     // empty output
-    
-    cout << b1 << endl;
 
-    assert(b1 . AddCar("XYZ-11-22", "George", "White") == true);
+    assert(b1 . AddCar("XYZ-11-22", 30, "George", "White") == true);
+    assert(b1 . CountOwners(30) == 1);
+    for (COwnerList l = b1 . ListOwners(30); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 1 owners in that order:
+
+    // White, George
+
+    assert(b1 . CountOwners("XYZ-11-22") == 1);
+    for (COwnerList l = b1 . ListOwners("XYZ-11-22"); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 1 owners in that order:
+
+    // White, George
+
 
     CRegister b2;
-    assert(b2 . AddCar("ABC-12-34", "John", "Smith") == true);
-    assert(b2 . AddCar("ABC-32-22", "John", "Hacker") == true);
-    assert(b2 . AddCar("XYZ-11-22", "Peter", "Smith") == true);
-    assert(b2 . AddCar("XYZ-11-22", "Jane", "Black") == false);
+    assert(b2 . AddCar("ABC-12-34", 10, "John", "Smith") == true);
+    assert(b2 . AddCar("ABC-32-22", 20, "John", "Hacker") == true);
+    assert(b2 . AddCar("XYZ-11-22", 30, "Peter", "Smith") == true);
+    assert(b2 . AddCar("XYZ-11-22", 30, "Jane", "Black") == false);
+    assert(b2 . AddCar("XYZ-11-22", 50, "Jane", "Black") == false);
+    assert(b2 . AddCar("ZZZ-11-22", 30, "Jane", "Black") == false);
     assert(b2 . DelCar("AAA-11-11") == false);
+    assert(b2 . DelCar(9999) == false);
+    assert(b2 . DelCar("ABC-32-22") == true);
+    assert(b2 . DelCar(20) == false);
+    assert(b2 . DelCar(30) == true);
+    assert(b2 . DelCar("XYZ-11-22") == false);
     assert(b2 . Transfer("BBB-99-99", "John", "Smith") == false);
     assert(b2 . Transfer("ABC-12-34", "John", "Smith") == false);
+    assert(b2 . Transfer(9999, "John", "Smith") == false);
+    assert(b2 . Transfer(10, "John", "Smith") == false);
     assert(b2 . CountCars("George", "White") == 0);
     for (CCarList l = b2 . ListCars("George", "White"); !l . AtEnd(); l . Next())
-        cout << l . RZ() << endl;
+        cout << l . RZ() << ", " << l . VIN() << endl;
     // empty output
+
+    assert(b2 . CountOwners("AAA-AA-AA") == 0);
+    for (COwnerList l = b2 . ListOwners("AAA-AA-AA"); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 0 owners in that order:
+
+
+    assert(b2 . CountOwners(9999) == 0);
+    for (COwnerList l = b2 . ListOwners(9999); !l . AtEnd(); l . Next())
+        cout << l . Surname() << ", " << l . Name() << endl;
+    // the following 0 owners in that order:
+
+
+
     return 0;
 }
 #endif /*__PROGTEST__*/
