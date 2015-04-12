@@ -229,13 +229,36 @@ void CCarList::Next() {
 
 class COwnerList {
 public:
+    COwnerList(CRecord * carRecord);
     string Name(void) const;
     string Surname(void) const;
     bool AtEnd(void) const;
     void Next(void);
 private:
-    // todo
+    vector<CPerson>::reverse_iterator revIterator;
+    CRecord * carRecord;
 };
+
+COwnerList::COwnerList(CRecord * carRecord){
+    this->carRecord = carRecord;
+    this->revIterator = carRecord->GetOwnerHistory().rbegin();
+}
+
+string COwnerList::Name() const {
+    return (*revIterator).GetName();
+}
+
+string COwnerList::Surname() const {
+    return (*revIterator).GetSurname();
+}
+
+void COwnerList::Next() {
+    this->revIterator++;
+}
+
+bool COwnerList::AtEnd() const {
+    return revIterator == carRecord->GetOwnerHistory().rend();
+}
 
 class CRegister {
 public:
@@ -532,13 +555,76 @@ bool CRegister::Transfer(const string & rz,
     }
     
     unsigned newByNameIndex;
-    FindByName(toUpdateRecord, newByNameIndex);
+    FindByName(*toUpdateRecord, newByNameIndex);
     for (unsigned i = records; i > newByNameIndex; i--) {
         byName[i] = byName[i - 1];
         byName[i]->SetByNameIndex(i);
     }
     
+    byName[newByNameIndex] = toUpdateRecord;
+    
     return 1;
+}
+
+bool CRegister::Transfer(unsigned int vin,
+        const string & nName,
+        const string & nSurname) {
+    unsigned delByVinIndex;
+    CRecord delRecord(vin);
+    if (!(FindByRz(delRecord, delByVinIndex))) {
+        cout << "Unable to delete, RECORD DOESN'T EXIST" << endl;
+        return 0;
+    }
+    CRecord * toUpdateRecord = byVin[delByVinIndex];    
+    
+    if (toUpdateRecord->GetName() == nName && toUpdateRecord->GetSurname() == nSurname)
+        return 0;
+    
+    toUpdateRecord->GetOwnerHistory().push_back(CPerson(nName, nSurname));
+    toUpdateRecord->SetName(nName);
+    toUpdateRecord->SetSurname(nSurname);
+    
+    for (unsigned i = toUpdateRecord->GetByNameIndex(); i < records - 1; i++) {
+        byName[i] = byName[i + 1];
+        byName[i]->SetByNameIndex(i);
+    }
+    
+    unsigned newByNameIndex;
+    FindByName(*toUpdateRecord, newByNameIndex);
+    for (unsigned i = records; i > newByNameIndex; i--) {
+        byName[i] = byName[i - 1];
+        byName[i]->SetByNameIndex(i);
+    }
+    
+    byName[newByNameIndex] = toUpdateRecord;
+    
+    return 1;
+}
+
+int CRegister::CountOwners(const string& rz) const {
+    unsigned byRzIndex;
+    if(!FindByRz(CRecord(rz), byRzIndex)) return 0;
+    return int(byRz[byRzIndex]->GetOwnerHistory().size());
+}
+
+int CRegister::CountOwners(unsigned int vin) const {
+    unsigned byVinIndex;
+    if(!FindByVin(CRecord(vin), byVinIndex)) return 0;
+    return int(byVin[byVinIndex]->GetOwnerHistory().size());
+}
+
+COwnerList CRegister::ListOwners(const string& rz) const {
+    unsigned rzIndex;
+    if(!FindByRz(CRecord(rz), rzIndex)) return NULL;
+    
+    return COwnerList(byRz[rzIndex]);
+}
+
+COwnerList CRegister::ListOwners(unsigned int vin) const {
+    unsigned vinIndex;
+    if(!FindByVin(CRecord(vin), vinIndex)) return NULL;
+    
+    return COwnerList(byVin[vinIndex]);
 }
 
 int CRegister::CountCars(const string& name, const string& surname) const {
