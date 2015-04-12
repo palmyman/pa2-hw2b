@@ -31,12 +31,14 @@ public:
     string GetName(void) const;
     string GetSurName(void) const;
     string GetRz(void) const;
+    unsigned GetByNameIndex() const;
+    void SetByNameIndex(unsigned byNameIndex);
 #ifndef __PROGTEST__
     friend ostream& operator<<(ostream&, const CRecord&);
 #endif /* __PROGTEST__ */
 private:
     string name, surname, rz;
-    unsigned vin;
+    unsigned vin, byNameIndex;
 };
 
 CRecord::CRecord(string name, string surname, string rz) {
@@ -44,6 +46,7 @@ CRecord::CRecord(string name, string surname, string rz) {
     this->surname = surname;
     this->rz = rz;
     this->vin = 0;
+    this->byNameIndex = 0;
 }
 
 CRecord::CRecord(string name, string surname) {
@@ -51,6 +54,7 @@ CRecord::CRecord(string name, string surname) {
     this->surname = surname;
     this->rz = "";
     this->vin = 0;
+    this->byNameIndex = 0;
 }
 
 CRecord::CRecord(string rz) {
@@ -58,6 +62,7 @@ CRecord::CRecord(string rz) {
     this->surname = "";
     this->rz = rz;
     this->vin = 0;
+    this->byNameIndex = 0;
 }
 
 bool CRecord::operator<(const CRecord& x) const {
@@ -92,21 +97,36 @@ string CRecord::GetRz() const {
     return this->rz;
 }
 
+unsigned CRecord::GetByNameIndex(void) const {
+    return this->byNameIndex;
+}
+
+void CRecord::SetByNameIndex(unsigned byNameIndex) {
+    this->byNameIndex = byNameIndex;
+}
+
 class CCarList {
 public:
     CCarList(CRecord ** byName, unsigned firstIndex, unsigned lastIndex);
+    CCarList(void);
     string RZ(void) const;
     bool AtEnd(void) const;
     void Next(void);
 private:
     CRecord ** byName;
     unsigned firstIndex, lastIndex;
+    bool empty;
 };
 
 CCarList::CCarList(CRecord** byName, unsigned firstIndex, unsigned lastIndex) {
     this->byName = byName;
     this->firstIndex = firstIndex;
     this->lastIndex = lastIndex;
+    this->empty = false;
+}
+
+CCarList::CCarList() {
+    this->empty = true;
 }
 
 string CCarList::RZ() const {
@@ -114,7 +134,8 @@ string CCarList::RZ() const {
 }
 
 bool CCarList::AtEnd() const {
-    return (firstIndex == lastIndex);
+    if(empty) return true;
+    return (firstIndex == lastIndex + 1);
 }
 
 void CCarList::Next() {
@@ -192,12 +213,13 @@ bool CRegister::FindFirstByName(const CRecord& tmpRecord, unsigned& firstIndex, 
     if (!FindByName(tmpRecord, anyIndex)) return 0;
     firstIndex = anyIndex;
     while (firstIndex > 0) {
-        if (byName[firstIndex]->GetSurName() != byName[firstIndex - 1]->GetSurName() &&
+        if (byName[firstIndex]->GetSurName() != byName[firstIndex - 1]->GetSurName() ||
                 byName[firstIndex]->GetName() != byName[firstIndex - 1]->GetName()) break;
         firstIndex--;
     }
+    lastIndex = anyIndex;
     while (lastIndex < records - 1) {
-        if (byName[lastIndex]->GetSurName() != byName[lastIndex + 1]->GetSurName() &&
+        if (byName[lastIndex]->GetSurName() != byName[lastIndex + 1]->GetSurName() ||
                 byName[lastIndex]->GetName() != byName[lastIndex + 1]->GetName()) break;
         lastIndex++;
     }
@@ -248,7 +270,7 @@ void CRegister::Realloc(void) {
     }
 }
 
-bool CRegister::AddCar(const string& name, const string& surname, const string& rz) {
+bool CRegister::AddCar(const string& rz, const string& name, const string& surname) {
     Realloc();
     CRecord tmpRecord(name, surname, rz);
     unsigned newByNameIndex, newByRzIndex;
@@ -262,13 +284,15 @@ bool CRegister::AddCar(const string& name, const string& surname, const string& 
         return 0;
     }
     //shift indexes
-    for (unsigned i = records; i > newByNameIndex; i--) {
+    for (unsigned i = records; i > newByNameIndex; i--) {        
         byName[i] = byName[i - 1];
+        byName[i]->SetByNameIndex(i);
     }
     for (unsigned i = records; i > newByRzIndex; i--) {
         byRz[i] = byRz[i - 1];
     }
     CRecord * newRecord = new CRecord(tmpRecord);
+    newRecord->SetByNameIndex(newByNameIndex);
     byName[newByNameIndex] = newRecord;
     byRz[newByRzIndex] = newRecord;
     records++;
@@ -283,14 +307,15 @@ bool CRegister::DelCar(const string& rz) {
         return 0;
     }
 
-    FindByName(*(byRz[delByRzIndex]), delByNameIndex);
+    delByNameIndex = byRz[delByRzIndex]->GetByNameIndex();
     delete byName[delByNameIndex];
     //shift indexes back to empty field
-    for (unsigned i = delByNameIndex; i < records; i++) {
+    for (unsigned i = delByNameIndex; i < records - 1; i++) {
         byName[i] = byName[i + 1];
+        byName[i]->SetByNameIndex(i);
     }
     byName[records] = NULL;
-    for (unsigned i = delByRzIndex; i < records; i++) {
+    for (unsigned i = delByRzIndex; i < records - 1; i++) {
         byRz[i] = byRz[i + 1];
     }
     byRz[records] = NULL;
@@ -304,7 +329,7 @@ bool CRegister::DelCar(const string& rz) {
 bool CRegister::Transfer(const string & rz,
         const string & nName,
         const string & nSurname) {
-    unsigned delByNameIndex, delByRzIndex;
+    unsigned delByRzIndex;
     CRecord delRecord(rz);
     if (!(FindByRz(delRecord, delByRzIndex))) {
         cout << "Unable to delete, RECORD DOESN'T EXIST" << endl;
@@ -313,21 +338,24 @@ bool CRegister::Transfer(const string & rz,
     CRecord * toDeleteRecord = byRz[delByRzIndex];
     if (toDeleteRecord->GetName() == nName && toDeleteRecord->GetSurName() == nSurname)
         return 0;
-    return DelCar(rz) && AddCar(nName, nSurname, rz);
+    return DelCar(rz) && AddCar(rz, nName, nSurname);
 }
 
 int CRegister::CountCars(const string& name, const string& surname) const {
     unsigned first, last;
     CRecord tmpRecord(name, surname);
-    FindFirstByName(tmpRecord, first, last);
-    return int(last - first);
+    if (!FindFirstByName(tmpRecord, first, last)) return 0;
+    cout << first << "-" << last << " = " << flush;
+    cout << int(last - first + 1) << endl;
+    return int(last - first + 1);
 }
 
 CCarList CRegister::ListCars(const string& name, const string& surname) const {
     unsigned first, last;
     CRecord tmpRecord(name, surname);
-    FindFirstByName(tmpRecord, first, last);
-    return CCarList(this->byName, first, last);
+    if (FindFirstByName(tmpRecord, first, last))
+        return CCarList(this->byName, first, last);
+    return CCarList();
 }
 
 /*
@@ -427,6 +455,8 @@ int main(int argc, char** argv) {
     // the following plate
 
     // ABC-32-22
+    
+    cout << b1 << endl;
 
     assert(b1 . Transfer("XYZ-11-22", "John", "Hacker") == true);
     assert(b1 . AddCar("XYZ-99-88", "John", "Smith") == true);
@@ -437,6 +467,8 @@ int main(int argc, char** argv) {
 
     // ABC-12-34
     // XYZ-99-88
+    
+    cout << b1 << endl;
 
     assert(b1 . CountCars("John", "Hacker") == 2);
     for (CCarList l = b1 . ListCars("John", "Hacker"); !l . AtEnd(); l . Next())
@@ -445,11 +477,15 @@ int main(int argc, char** argv) {
 
     // ABC-32-22
     // XYZ-11-22
+    
+    cout << b1 << endl;
 
     assert(b1 . CountCars("Peter", "Smith") == 0);
     for (CCarList l = b1 . ListCars("Peter", "Smith"); !l . AtEnd(); l . Next())
         cout << l . RZ() << endl;
     // empty output
+    
+    cout << b1 << endl;
 
     assert(b1 . Transfer("XYZ-11-22", "Jane", "Black") == true);
     assert(b1 . CountCars("Jane", "Black") == 1);
@@ -458,6 +494,8 @@ int main(int argc, char** argv) {
     // the following plate
 
     // XYZ-11-22
+    
+    cout << b1 << endl;
 
     assert(b1 . CountCars("John", "Smith") == 2);
     for (CCarList l = b1 . ListCars("John", "Smith"); !l . AtEnd(); l . Next())
@@ -466,12 +504,16 @@ int main(int argc, char** argv) {
 
     // ABC-12-34
     // XYZ-99-88
+    
+    cout << b1 << endl;
 
     assert(b1 . DelCar("XYZ-11-22") == true);
     assert(b1 . CountCars("Jane", "Black") == 0);
     for (CCarList l = b1 . ListCars("Jane", "Black"); !l . AtEnd(); l . Next())
         cout << l . RZ() << endl;
     // empty output
+    
+    cout << b1 << endl;
 
     assert(b1 . AddCar("XYZ-11-22", "George", "White") == true);
 
