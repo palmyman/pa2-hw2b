@@ -410,9 +410,12 @@ bool CRegister::AddCar(const string& rz, unsigned int vin, const string& name, c
     }
     for (unsigned i = records; i > newByVinIndex; i--) {
         byVin[i] = byVin[i - 1];
+        byVin[i]->SetByVinIndex(i);
     }
     CRecord * newRecord = new CRecord(tmpRecord);
     newRecord->SetByNameIndex(newByNameIndex);
+    newRecord->SetByRzIndex(newByRzIndex);
+    newRecord->SetByVinIndex(newByVinIndex);
     byName[newByNameIndex] = newRecord;
     byRz[newByRzIndex] = newRecord;
     byVin[newByVinIndex] = newRecord;
@@ -429,6 +432,7 @@ bool CRegister::DelCar(const string& rz) {
     }
 
     delByNameIndex = byRz[delByRzIndex]->GetByNameIndex();
+    delByVinIndex = byRz[delByRzIndex]->GetByVinIndex();
     delete byName[delByNameIndex];
     //shift indexes back to empty field
     for (unsigned i = delByNameIndex; i < records - 1; i++) {
@@ -438,12 +442,48 @@ bool CRegister::DelCar(const string& rz) {
     byName[records] = NULL;
     for (unsigned i = delByRzIndex; i < records - 1; i++) {
         byRz[i] = byRz[i + 1];
+        byRz[i]->SetByRzIndex(i);
     }
     byVin[records] = NULL;
     for (unsigned i = delByVinIndex; i < records - 1; i++) {
         byVin[i] = byVin[i + 1];
+        byVin[i]->SetByVinIndex(i);
     }
     byRz[records] = NULL;
+
+    records--;
+    //if less then 40% of memory is used reallocate
+    Realloc();
+    return 1;
+}
+
+bool CRegister::DelCar(unsigned int& vin) {
+    unsigned delByNameIndex, delByRzIndex, delByVinIndex;
+    CRecord delRecord(vin);
+    if (!(FindByVin(delRecord, delByVinIndex))) {
+        cout << "Unable to delete, RECORD DOESN'T EXIST" << endl;
+        return 0;
+    }
+
+    delByNameIndex = byVin[delByVinIndex]->GetByNameIndex();
+    delByRzIndex = byRz[delByVinIndex]->GetByRzIndex();
+    delete byName[delByNameIndex];
+    //shift indexes back to empty field
+    for (unsigned i = delByNameIndex; i < records - 1; i++) {
+        byName[i] = byName[i + 1];
+        byName[i]->SetByNameIndex(i);
+    }
+    byName[records] = NULL;
+    for (unsigned i = delByRzIndex; i < records - 1; i++) {
+        byRz[i] = byRz[i + 1];
+        byRz[i]->SetByRzIndex(i);
+    }
+    byRz[records] = NULL;
+    for (unsigned i = delByVinIndex; i < records - 1; i++) {
+        byVin[i] = byVin[i + 1];
+        byVin[i]->SetByVinIndex(i);
+    }
+    byVin[records] = NULL;
 
     records--;
     //if less then 40% of memory is used reallocate
